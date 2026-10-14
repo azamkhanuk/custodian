@@ -1,0 +1,24 @@
+{
+  "name": "custodian-dev",
+  "owner": {
+    "name": "Azam Khan"
+  },
+  "plugins": [
+    {
+      "name": "custodian",
+      "source": "./",
+      "description": "A read-only audit of where your Claude Code context sits, with a local dashboard. Flags one client's details leaking into another's sessions.",
+      "category": "productivity",
+      "tags": [
+        "context",
+        "claude-md",
+        "skills",
+        "audit",
+        "privacy"
+      ]
+    }
+  ],
+  "metadata": {
+    "description": "The development marketplace of Custodian, for installing the plugin from a clone. To install a release, use the azamkhanuk marketplace."
+  }
+}

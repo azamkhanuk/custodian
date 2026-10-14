@@ -1,0 +1,9 @@
+{
+  "name": "custodian",
+  "version": "0.3.0",
+  "description": "A read-only audit of where your Claude Code context sits: global, per group of repos, or per repo. It flags one client's details leaking into another's sessions and shows the result in a local dashboard.",
+  "author": { "name": "Azam Khan" },
+  "repository": "https://github.com/azamkhanuk/custodian",
+  "license": "MIT",
+  "keywords": ["context", "claude-md", "skills", "audit", "privacy", "dashboard"]
+}

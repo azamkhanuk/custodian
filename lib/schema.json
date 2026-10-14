@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Custodian audit report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "claude_code_version", "model", "summary", "items"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "generated_at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$" },
+    "examples_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "claude_code_version": { "type": "string", "minLength": 1 },
+    "model": { "type": "string", "minLength": 1 },
+    "plugin_version": { "type": ["string", "null"] },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seconds", "input_tokens", "output_tokens", "api_equivalent_usd"],
+      "properties": {
+        "seconds": { "type": ["integer", "null"], "minimum": 0 },
+        "input_tokens": { "type": ["integer", "null"], "minimum": 0 },
+        "output_tokens": { "type": ["integer", "null"], "minimum": 0 },
+        "api_equivalent_usd": { "type": ["number", "null"], "minimum": 0 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "pass", "warn", "fail"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "pass": { "type": "integer", "minimum": 0 },
+        "warn": { "type": "integer", "minimum": 0 },
+        "fail": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "items": { "type": "array", "items": { "$ref": "#/$defs/item" } }
+  },
+  "$defs": {
+    "tier": { "enum": ["global", "client", "project"] },
+    "nullableTier": { "enum": ["global", "client", "project", null] },
+    "verdict": { "enum": ["pass", "warn", "fail"] },
+    "flag": { "enum": ["warn", "fail"] },
+    "nullableQuote": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["line", "text"],
+      "properties": {
+        "line": { "type": "integer", "minimum": 1 },
+        "text": { "type": "string", "minLength": 1 }
+      }
+    },
+    "home": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tier", "scope", "project", "root"],
+      "properties": {
+        "tier": { "$ref": "#/$defs/nullableTier" },
+        "scope": { "type": ["string", "null"] },
+        "project": { "type": ["string", "null"] },
+        "root": { "type": ["string", "null"] }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["line", "text", "verdict", "suggested_tier", "rationale"],
+      "properties": {
+        "line": { "type": "integer", "minimum": 1 },
+        "text": { "type": "string", "minLength": 1 },
+        "verdict": { "$ref": "#/$defs/flag" },
+        "suggested_tier": { "$ref": "#/$defs/tier" },
+        "rationale": { "type": "string", "minLength": 1 }
+      }
+    },
+    "judgement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "verdict", "suggested_tier", "rationale", "evidence", "findings"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "verdict": { "$ref": "#/$defs/verdict" },
+        "suggested_tier": { "$ref": "#/$defs/nullableTier" },
+        "rationale": { "type": "string", "minLength": 1 },
+        "evidence": { "$ref": "#/$defs/nullableQuote" },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } }
+      }
+    },
+    "agentResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/$defs/judgement" } }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "linked_from", "home", "kind", "tier", "scope", "verdict", "suggested_tier", "rationale", "evidence", "findings"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "pattern": "^/" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "linked_from": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "above": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "imported_by": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "home": { "$ref": "#/$defs/home" },
+        "kind": { "enum": ["claude_md", "skill", "agent", "rule", "command", "import"] },
+        "tier": { "$ref": "#/$defs/tier" },
+        "scope": { "type": ["string", "null"] },
+        "verdict": { "$ref": "#/$defs/verdict" },
+        "suggested_tier": { "$ref": "#/$defs/nullableTier" },
+        "rationale": { "type": "string", "minLength": 1 },
+        "evidence": { "$ref": "#/$defs/nullableQuote" },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "enum": ["skill", "agent", "command"] } } },
+          "then": { "properties": { "findings": { "maxItems": 0 } } }
+        },
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "enum": ["claude_md", "rule", "import"] } } },
+          "then": { "properties": { "evidence": { "type": "null" } } }
+        },
+        {
+          "if": { "required": ["verdict"], "properties": { "verdict": { "const": "pass" } } },
+          "then": { "properties": { "suggested_tier": { "type": "null" } } },
+          "else": { "properties": { "suggested_tier": { "$ref": "#/$defs/tier" } } }
+        }
+      ]
+    }
+  }
+}

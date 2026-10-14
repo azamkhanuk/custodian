@@ -1,0 +1,17 @@
+{
+  "tiers": [
+    { "tier": "global",  "path": "~/.claude" },
+    { "tier": "client",  "path": "~/Developer/client-a", "scope": "client-a" },
+    { "tier": "client",  "path": "~/.claude-client-a",   "scope": "client-a" },
+    { "tier": "client",  "path": "~/Developer/client-b", "scope": "client-b" },
+    { "tier": "project", "glob": "~/Developer/*/*/CLAUDE.md" },
+    { "tier": "project", "glob": "~/Developer/*/*/.claude" }
+  ],
+  "slots": { "client-a": "~/.claude-client-a" },
+  "exclude": ["~/Developer/client-b/vendored-thing"],
+  "editor_url": "zed://file/{path}:{line}",
+  "remind": true,
+  "stale_after_days": 7,
+  "model": "sonnet",
+  "timeout_seconds": 900
+}

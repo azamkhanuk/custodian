@@ -1,0 +1,4 @@
+#!/bin/bash
+# A git pre-push hook. Linked as .git/hooks/pre-push in a clone that publishes, it stops a push that names something of yours.
+root=$(git rev-parse --show-toplevel) || exit 1
+exec "$root/scripts/release-check.sh" --quick

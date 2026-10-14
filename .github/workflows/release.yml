@@ -1,0 +1,36 @@
+name: release
+
+on:
+  workflow_run:
+    workflows: [checks]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - name: Publish the release the manifest names, unless it is out already
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="$(scripts/release-notes.sh --tag)"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+            echo "$tag is out already. Nothing to publish."
+            exit 0
+          fi
+          title="$(scripts/release-notes.sh --title)"
+          scripts/release-notes.sh > "$RUNNER_TEMP/notes.md"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "$title"
+          git push origin "refs/tags/$tag"
+          gh release create "$tag" --verify-tag --title "$title" --notes-file "$RUNNER_TEMP/notes.md"

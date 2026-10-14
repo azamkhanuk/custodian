@@ -1,0 +1,57 @@
+name: checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A private repository pays ten times for macOS minutes, so nothing runs there unless someone starts it.
+jobs:
+  validate:
+    if: ${{ !github.event.repository.private || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: claude plugin validate --strict .
+      - run: claude plugin validate --strict .claude-plugin/plugin.json
+
+  test:
+    if: ${{ !github.event.repository.private || github.event_name == 'workflow_dispatch' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [test/run.smoke.sh, test/custodian.smoke.sh]
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - run: brew install check-jsonschema
+      - name: The suite, with a stand-in claude first on PATH
+        run: ${{ matrix.suite }}
+
+  gate:
+    if: ${{ always() && (!github.event.repository.private || github.event_name == 'workflow_dispatch') }}
+    needs:
+      - validate
+      - test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Every job listed under needs succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS"
+          for result in $RESULTS; do
+            [ "$result" = success ] || exit 1
+          done

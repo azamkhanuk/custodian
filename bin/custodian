@@ -1,0 +1,93 @@
+#!/bin/bash
+set -u
+
+self=$0
+while [ -L "$self" ]; do
+  target=$(readlink "$self")
+  case "$target" in /*) self=$target;; *) self="$(dirname "$self")/$target";; esac
+done
+ROOT=$(cd "$(dirname "$self")/.." && pwd -P)
+export CUSTODIAN_ROOT=$ROOT
+. "$ROOT/lib/common.sh"
+. "$ROOT/lib/jq-defs.sh"
+
+usage() {
+  cat <<'USAGE'
+usage: custodian <subcommand>
+  audit [--dry-run] [--if-stale]
+                      judge every context file and replace the report
+  dry-run [--json]    list what would be audited, per batch and account
+  status [--json]     say what has drifted since the audit and whether the report is stale
+  dashboard [--no-open]
+                      check what has drifted, generate the dashboard page and open it
+  ack <payload>       save acknowledgements copied from the dashboard
+  detect [--json] [--all] [--decline <key>]
+                      read the disk and propose a config; write nothing but an offer turned down
+  init                create the data folder, optionally importing a config
+  doctor              check this machine and the data folder
+  version             print the version
+USAGE
+}
+
+subcommand=${1:-}
+[ $# -gt 0 ] && shift
+
+case "$subcommand" in
+  doctor|version) ;;
+  *) on_macos || die 2 "only macOS is supported, and this is $(system_name)";;
+esac
+ensure_data_folder
+remember_install_root
+
+case "$subcommand" in
+  audit)
+    require_config
+    runner_args=()
+    if_stale=0
+    for arg in "$@"; do
+      if [ "$arg" = "--if-stale" ]; then if_stale=1; else runner_args+=("$arg"); fi
+    done
+    if [ "$if_stale" = 1 ] && [ -r "$(report_path)" ] && this_schema "$(report_path)"; then
+      "$ROOT/lib/status.sh" --quiet || exit $?
+      if [ "$(jq -r .stale "$DATA/status.json")" = false ]; then
+        printf 'custodian: nothing the report covers has changed since the audit of %s, so nothing was run\n' "$(jq -r '.report_generated_at[0:10]' "$DATA/status.json")"
+        exit 0
+      fi
+    fi
+    "$ROOT/lib/run.sh" --config "$DATA/config.json" ${runner_args[@]+"${runner_args[@]}"}
+    status=$?
+    case " $* " in *" --dry-run "*) exit "$status";; esac
+    if [ "$status" = 0 ]; then
+      "$ROOT/lib/status.sh" --after-audit 2>/dev/null || say "the report is written, but its status could not be recorded"
+      "$ROOT/lib/dashboard.sh" --no-open 2>/dev/null || say "the report is written, but the dashboard page could not be regenerated"
+    fi
+    exit "$status";;
+  dry-run)
+    require_config
+    if [ "${1:-}" = "--json" ]; then exec "$ROOT/lib/run.sh" --config "$DATA/config.json" --dry-run; fi
+    manifest=$("$ROOT/lib/run.sh" --config "$DATA/config.json" --dry-run) || exit $?
+    printf '%s' "$manifest" \
+      | jq -r --arg home "$HOME" "$JQ_ACCOUNT"'.batches[] | [.batch, account($home), "\(.judge | length) items", "\(.reference | length) reference"] | @tsv' \
+      | column -t -s "$(printf '\t')";;
+  status)
+    case "$*" in ""|"--json") exec "$ROOT/lib/status.sh" "$@";; esac
+    usage >&2; exit 2;;
+  dashboard)
+    case "$*" in ""|"--no-open") ;; *) usage >&2; exit 2;; esac
+    page_args=()
+    if [ -r "$(report_path)" ] && this_schema "$(report_path)"; then
+      if "$ROOT/lib/status.sh" --quiet 2>/dev/null; then
+        say "$(jq -r '"since the audit: \(.drift.changed | length) changed, \(.drift.new | length) new, \(.drift.gone | length) gone, \(.drift.relinked | length) relinked"' "$DATA/status.json")"
+      else
+        say "what has drifted could not be checked, and the page says so; custodian status explains why"
+        page_args=(--drift-unknown)
+      fi
+    fi
+    exec "$ROOT/lib/dashboard.sh" ${page_args[@]+"${page_args[@]}"} "$@";;
+  ack) exec "$ROOT/lib/ack.sh" "$@";;
+  detect) exec "$ROOT/lib/detect.sh" "$@";;
+  init) exec "$ROOT/lib/init.sh" "$@";;
+  doctor) exec "$ROOT/lib/doctor.sh" "$@";;
+  version) printf 'custodian %s\n' "$(jq -r .version "$ROOT/.claude-plugin/plugin.json")";;
+  *) usage >&2; exit 2;;
+esac
