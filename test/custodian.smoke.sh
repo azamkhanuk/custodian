@@ -141,6 +141,8 @@ dashboard_view() {
   t "nothing is left in the temp directory" '[ -z "$(ls -A "$TMPD")" ]' "left=$(ls -A "$TMPD")"
 
   t "hostile text cannot close the data block" '[ "$(grep -o "</script>" "$DATA/dashboard.html" | wc -l | tr -d " ")" = 2 ]' "count=$(grep -o "</script>" "$DATA/dashboard.html" | wc -l)"
+  t "the page has one status region, beside the part it redraws" \
+    '[ "$(grep -o "<div id=\"status\" role=\"status\"" "$DATA/dashboard.html" | wc -l | tr -d " ")" = 1 ] && grep -q "<div id=\"app\"></div>" "$DATA/dashboard.html"'
   t "hostile text comes back unchanged" 'jq -e --arg h "$HOSTILE" ".items[0].entries[1].text == \$h" "$WORLD/view.json" >/dev/null'
   t "the page refers to nothing on the network" '! sed "s/<script id=\"custodian-data\".*<\/script>//" "$DATA/dashboard.html" | grep -Eqi "https?://|(src|href)=.?//"'
   awk '/^<script>/ { sub(/^<script>/, ""); on = 1 } /^<\/script>$/ { on = 0 } on { print }' "$DATA/dashboard.html" > "$WORLD/emitted.js"

@@ -46,6 +46,7 @@ button, input, select { font: inherit; color: inherit; }
 .skip { position: absolute; top: -100px; left: 16px; z-index: 2; padding: 8px 12px; background: var(--ink); color: var(--paper); }
 .skip:focus { top: 12px; }
 #results:focus { outline: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 .report {
   padding: 40px 40px 28px;
