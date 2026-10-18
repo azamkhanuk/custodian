@@ -139,6 +139,7 @@ code { font: 400 13px/1.5 var(--file); }
 .entry.warn { border-left-color: var(--ink); }
 .entry.accepted { border-left-color: var(--quiet); }
 .entry .line { padding-top: 1px; font-size: 13px; color: var(--quiet); text-align: right; font-variant-numeric: tabular-nums; }
+.entry .line-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 .entry .body { min-width: 0; }
 .entry code { display: block; max-width: 100ch; overflow-wrap: anywhere; }
 .entry p { margin: 2px 0 0; max-width: 80ch; font-size: 14px; }
@@ -177,7 +178,7 @@ code { font: 400 13px/1.5 var(--file); }
 .save[hidden] { display: none; }
 .save button { padding: 5px 12px; border: 1px solid var(--paper); border-radius: 3px; background: var(--paper); color: var(--ink); font-weight: 600; cursor: pointer; }
 .save button.second { background: none; color: var(--paper); }
-.save input { flex: 1 1 30ch; min-width: 16ch; padding: 4px 8px; border: 1px solid var(--quiet); border-radius: 3px; background: none; color: var(--paper); font: 400 12.5px/1.4 var(--file); }
+.save input { flex: 1 1 30ch; min-width: 16ch; padding: 4px 8px; border: 1px solid var(--rule); border-radius: 3px; background: none; color: var(--paper); font: 400 12.5px/1.4 var(--file); }
 .save .hint { flex-basis: 100%; color: var(--rule); font-size: 13px; }
 .save :focus-visible { outline-color: var(--paper); }
 
@@ -196,4 +197,5 @@ footer { padding: 16px 32px 24px; color: var(--quiet); font-size: 13px; border-t
 @media (max-width: 480px) {
   .entry { grid-template-columns: minmax(0, 1fr); }
   .entry .line { text-align: left; }
+  .entry .line-word { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
 }

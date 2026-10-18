@@ -5,7 +5,7 @@
 ## What it shows
 
 - **The headline.** How many files leak, how many are too specific or too generic for where they sit, and how many need nothing from you.
-- **How old the audit is,** and what has changed on disk since. It turns amber when the report is stale and red when it is older than `stale_after_days`.
+- **How old the audit is,** and what has changed on disk since. It is flagged "Stale" when the report is stale, and "Out of date" when it is older than `stale_after_days`.
 - **Where files live.** A tree of your global folder, each group with its repos, your standalone repos, and files outside every root, with a count of what is open under each. In a narrow window it is folded behind "Where it lives".
 - **One card for each file.** Where it lives, who loads it, where its content belongs, and the reason. A file judged line by line shows each flagged line, quoted: the first five, with the rest folded under them.
 
