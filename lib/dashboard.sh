@@ -41,8 +41,8 @@ editor_url=""
 printf 'null' > "$WORK/status.json"
 if [ "$DRIFT" = known ] && this_schema "$DATA/status.json" && describes_report "$DATA/status.json" "$REPORT"; then cp "$DATA/status.json" "$WORK/status.json"; fi
 
-VIEW="$JQ_ENTRIES"'
-def rank: {"fail": 0, "warn": 1, "accepted": 2, "pass": 3}[.];
+VIEW="$TIER_BREADTH$JQ_ENTRIES"'
+def rank: {"fail": 0, "warn": 1, "generic": 2, "accepted": 3, "pass": 4}[.];
 def abbrev: if startswith($home + "/") then "~/" + .[($home | length) + 1:] else . end;
 def node:
   .home as $h
@@ -52,7 +52,7 @@ def node:
     elif $h.tier == "project" then "standalone:" + $h.project
     else "external" end;
 def top: if startswith("standalone:") then "standalone" elif startswith("repo:") then "group:" + (ltrimstr("repo:") | split("/")[0]) else . end;
-def tally($items): {fail: ($items | map(select(.needs == "fail")) | length), warn: ($items | map(select(.needs == "warn")) | length)};
+def tally($items): {fail: ($items | map(select(.needs == "fail")) | length), warn: ($items | map(select(.band == "warn")) | length)};
 def sh: "'"'"'" + gsub("'"'"'"; "'"'"'\\'"'"''"'"'") + "'"'"'";
 
 ($live[0] | map({key: .position, value: .key}) | from_entries) as $keys
@@ -66,9 +66,10 @@ def sh: "'"'"'" + gsub("'"'"'"; "'"'"'\\'"'"''"'"'") + "'"'"'";
         | . + {key: $keys["\($i)/\($j)"]}
         | . + {acknowledged: ($acknowledged[.key] | if . == null then null else {note: (.note // ""), acknowledged_at} end)} ] as $entries
     | ([$entries[] | select(.acknowledged == null) | .verdict] | if length == 0 then "pass" elif any(.[]; . == "fail") then "fail" else "warn" end) as $needs
+    | ($needs == "warn" and all($entries[] | select(.acknowledged == null and .verdict == "warn"); (.suggested_tier | breadth) > ($item.tier | breadth))) as $generic
     | ($item | node) as $node
     | { id: $item.id, kind: $item.kind, by_line: ($item.kind | by_line), verdict: $item.verdict, needs: $needs,
-        band: (if $needs != "pass" then $needs elif $item.verdict != "pass" then "accepted" else "pass" end),
+        band: (if $generic then "generic" elif $needs != "pass" then $needs elif $item.verdict != "pass" then "accepted" else "pass" end),
         node: $node, top: ($node | top), lives_in: ($item.path | abbrev), path: $item.path,
         loaded_by: {tier: $item.tier, scope: $item.scope}, linked_from: $item.linked_from, above: ($item.above // []), imported_by: ($item.imported_by // []),
         suggested_tier: $item.suggested_tier, rationale: $item.rationale, entries: $entries, drift: $drift[$item.id],
@@ -81,8 +82,8 @@ def sh: "'"'"'" + gsub("'"'"'"; "'"'"'\\'"'"''"'"'") + "'"'"'";
     model: $report[0].model,
     claude_code_version: $report[0].claude_code_version,
     summary: ($report[0].summary + {acknowledged: ($items | map(select(.band == "accepted")) | length)}),
-    headline: (tally($present) as $open
-      | {leaks: $open.fail, misfiled: $open.warn, settled: (($present | length) - $open.fail - $open.warn),
+    headline: (tally($present) as $open | ($present | map(select(.band == "generic")) | length) as $generic
+      | {leaks: $open.fail, misfiled: $open.warn, generic: $generic, settled: (($present | length) - $open.fail - $open.warn - $generic),
          changed: ($present | map(select(.needs == "fail" and .drift != null)) | length), gone: (($items | length) - ($present | length))}),
     ack_command: (if $data == $home + "/.custodian" then "\"$(cat \"$HOME/.custodian/plugin-root\")/bin/custodian\" ack"
                   else "CUSTODIAN_HOME=\($data | sh) \"$(cat \($data + "/plugin-root" | sh))/bin/custodian\" ack" end),

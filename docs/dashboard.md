@@ -4,12 +4,14 @@
 
 ## What it shows
 
-- **The headline.** How many files leak, how many are misfiled, and how many need nothing from you.
+- **The headline.** How many files leak, how many are too specific or too generic for where they sit, and how many need nothing from you.
 - **How old the audit is,** and what has changed on disk since. It turns amber when the report is stale and red when it is older than `stale_after_days`.
 - **Where files live.** A tree of your global folder, each group with its repos, your standalone repos, and files outside every root, with a count of what is open under each.
 - **One card for each file.** Where it lives, who loads it, where its content belongs, and the reason. A file judged line by line shows each flagged line, quoted.
 
-Files are in four bands: leaks, misfiled, accepted and in place. Leaks come first.
+Files are in five bands: leaks, too specific, too generic, accepted and in place. Leaks come first.
+
+A misfiled file is too generic when every finding still open in it suggests a broader tier than the one it is loaded from, and too specific otherwise. Too generic files are folded away under their count, as accepted ones are, and a checkbox shows them. The tree's second count is the too specific files alone, so it counts what the page shows by default.
 
 Drift annotates and never recounts:
 

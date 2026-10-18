@@ -162,7 +162,7 @@ button, input, select { font: inherit; color: inherit; }
 
 .verdict { font: 700 16px/1.3 var(--tight); }
 .verdict.fail { color: var(--leak); }
-.verdict.warn { color: var(--misfiled); }
+.verdict.warn, .verdict.generic { color: var(--misfiled); }
 .verdict.pass, .verdict.accepted { color: var(--in-place); }
 .verdict.unjudged { color: var(--carbon); }
 .verdict small { display: block; font: 500 13px/1.3 var(--tight); color: var(--quiet); }
