@@ -10,6 +10,7 @@
   --in-place: #2f6b4f;
   --carbon: #27408b;
   --over: #b42318;
+  --loaded: #b9c7bd;
   --text: "Avenir Next", "Avenir", system-ui, sans-serif;
   --tight: "Avenir Next Condensed", "Avenir Next", system-ui, sans-serif;
   --file: ui-monospace, "SF Mono", Menlo, monospace;
@@ -27,6 +28,7 @@
     --in-place: #7bc8a0;
     --carbon: #9db4ff;
     --over: #ff8a7a;
+    --loaded: #3f5249;
   }
 }
 
@@ -152,7 +154,7 @@ button, input, select { font: inherit; color: inherit; }
 
 .clear {
   padding: 5px 10px;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--quiet);
   border-radius: 3px;
   background: none;
   cursor: pointer;
@@ -192,7 +194,7 @@ button, input, select { font: inherit; color: inherit; }
 
 .gauge { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; align-self: start; }
 .cell { height: 14px; border: 1px solid var(--quiet); border-radius: 2px; }
-.cell.loaded { background: var(--quiet); }
+.cell.loaded { background: var(--loaded); }
 .cell.over { background: var(--over); border-color: var(--over); }
 .cell.could { border-style: dashed; border-color: var(--in-place); }
 .gauge span { font: 500 12px/1.2 var(--tight); color: var(--quiet); text-align: center; }
