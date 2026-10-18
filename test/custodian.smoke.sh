@@ -169,7 +169,7 @@ dashboard_view() {
   jqt "a leaking file that has gone is not counted as leaking, and one that changed is said to have" "$WORLD/view.json" '.headline == {leaks: 1, misfiled: 0, generic: 1, settled: 3, changed: 1, gone: 1}'
   jqt "the tree and its total leave a gone file out, as the headline does, and still count one that changed" "$WORLD/view.json" '([.tree[] | select(.node == "global") | .fail] == [1]) and .everything.fail == 1'
   t "the page takes its headline from the view model and counts nothing itself" \
-    'grep -q "data.headline" "$plugin/lib/page.js" && ! grep -q "item.needs === \"fail\").length" "$plugin/lib/page.js"'
+    'grep -q "data.headline" "$plugin/lib/page.js" && grep -q "data.everything" "$plugin/lib/page.js" && ! grep -q "item.needs ===" "$plugin/lib/page.js"'
 
   audited_world; regenerate
   jqt "the page is given a save command that needs no launcher" "$WORLD/view.json" '.ack_command == "\"$(cat \"$HOME/.custodian/plugin-root\")/bin/custodian\" ack"'
