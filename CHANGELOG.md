@@ -11,6 +11,7 @@ The dashboard counts what it shows, keeps the leaks in front, and works by keybo
 - **Keyboard focus stays put.** A filter change or a tree click kept nothing focused, so the next Tab started from the top. Focus now stays on the control, a tree click brings the results into view, and a "Skip to results" link comes first. The save bar's focus ring is visible on the bar.
 - **Narrow windows.** The save bar takes its own room and no longer covers the end of the page. Below 861 pixels the tree is folded and a card is one column. A card shows five flagged lines and folds the rest.
 - **For a screen reader.** The tree's counts say what they count, each line's controls name their file and line, and the number of files shown and "Copied" are announced.
+- **A quieter page.** The page is black on white, or white on black, with red kept for leaks alone. The headline is one line of counts, and each file is a short card: its path, what kind of file it is, who loads it and where it belongs, then its flagged lines. The three-bar gauge and its legend are gone, since the line above them says the same.
 - **Words.** The save bar names both places to paste its command. A failed audit's notice says to run the audit again once the reason is fixed. A whole-file finding says it was judged whole.
 
 ## 0.3.0 - 2026-10-14
