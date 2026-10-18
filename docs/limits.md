@@ -39,7 +39,6 @@ It reads nothing more from a file after a quote whose list or inner quote runs o
 
 - A group read under an account of its own by the real model. The suites show what such a batch is sent; the live check's estate has one account.
 - An account whose login is a Console key, a gateway or a cloud provider. Only made-up ones were tried, and each was refused.
-- Both suites on a hosted macOS runner. The workflows are written and have never run.
 - What a real usage limit prints. The message quotes whatever Claude Code says.
 - How large one batch can be. Nothing caps one, and it has `timeout_seconds` to finish.
 - The judge's verdicts are a model's, and it wobbles: on one invented estate it passed a line in one run and flagged it in the next. Every quote is checked, but a verdict is a judgement. Your examples are what steer it.

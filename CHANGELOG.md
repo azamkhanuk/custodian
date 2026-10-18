@@ -2,6 +2,18 @@
 
 Each release of Custodian, newest first. The version is the one in `.claude-plugin/plugin.json`. An installed copy stays on its release until `claude plugin update custodian@azamkhanuk` finds a newer one, or until auto-update does where that is on.
 
+## 0.3.1 - 2026-10-18
+
+The dashboard counts what it shows, keeps the leaks in front, and works by keyboard and screen reader. Nothing about the audit, the report or the config changed, so a report from 0.3.0 opens as it is.
+
+- **Counts that agree.** After a leaking file was deleted, the tree still counted it while the headline did not. Both now count what the page lists. The count beside the search says how many files are shown of how many match, where it counted hidden ones too.
+- **Too generic files fold away.** A misfiled file whose findings all suggest a broader tier is too generic, and it is folded under its count with a checkbox to show it. Files that are too specific for where they sit stay in view beside the leaks. The headline counts the two apart.
+- **Keyboard focus stays put.** A filter change or a tree click kept nothing focused, so the next Tab started from the top. Focus now stays on the control, a tree click brings the results into view, and a "Skip to results" link comes first. The save bar's focus ring is visible on the bar.
+- **Narrow windows.** The save bar takes its own room and no longer covers the end of the page. Below 861 pixels the tree is folded. A card shows five flagged lines and folds the rest.
+- **For a screen reader.** The tree's counts say what they count, each line's controls name their file and line, and the number of files shown and "Copied" are announced.
+- **A quieter page.** The page is black on white, or white on black, with red kept for leaks alone. The headline is one line of counts, and each file is a short card: its path, what kind of file it is, who loads it and where it belongs, then its flagged lines. The three-bar gauge and its legend are gone, since the line above them says the same.
+- **Words.** The save bar names both places to paste its command. A failed audit's notice says to run the audit again once the reason is fixed. A whole-file finding says it was judged whole.
+
 ## 0.3.0 - 2026-10-14
 
 The audit runs on a Claude subscription and on nothing else, a group with an account of its own is sent only what its sessions load, setup reads the disk before it asks, and four more kinds of context are audited.

@@ -124,7 +124,7 @@ dashboard_view() {
   jqt "the tree follows home, with counts that include children" "$WORLD/view.json" \
     '[.tree[] | {node, fail, warn, children: [.children[] | {node, fail, warn}]}] == [
        {node: "global", fail: 2, warn: 0, children: []},
-       {node: "group:acme", fail: 0, warn: 1, children: [{node: "repo:acme/web", fail: 0, warn: 1}]},
+       {node: "group:acme", fail: 0, warn: 0, children: [{node: "repo:acme/web", fail: 0, warn: 0}]},
        {node: "standalone", fail: 0, warn: 0, children: [{node: "standalone:side", fail: 0, warn: 0}]},
        {node: "external", fail: 0, warn: 0, children: []}]'
   jqt "leaks come first, then warnings, then passes" "$WORLD/view.json" \
@@ -137,10 +137,12 @@ dashboard_view() {
     'all(.items[].entries[]; .key | test("^[0-9a-f]{12}$")) and all(.items[] | select(.verdict == "pass"); .entries == [])'
   jqt "no failure banner and no editor links by default" "$WORLD/view.json" '.last_failure == null and .editor_url == null'
   jqt "every item says which band and which top-level node it belongs to" "$WORLD/view.json" \
-    '([.items[] | [.id, .band, .top]] | .[0:4]) == [["global/CLAUDE.md", "fail", "global"], ["global/skills/commit-style", "fail", "global"], ["acme/web/CLAUDE.md", "warn", "group:acme"], ["acme/CLAUDE.md", "pass", "group:acme"]]'
+    '([.items[] | [.id, .band, .top]] | .[0:4]) == [["global/CLAUDE.md", "fail", "global"], ["global/skills/commit-style", "fail", "global"], ["acme/web/CLAUDE.md", "generic", "group:acme"], ["acme/CLAUDE.md", "pass", "group:acme"]]'
   t "nothing is left in the temp directory" '[ -z "$(ls -A "$TMPD")" ]' "left=$(ls -A "$TMPD")"
 
   t "hostile text cannot close the data block" '[ "$(grep -o "</script>" "$DATA/dashboard.html" | wc -l | tr -d " ")" = 2 ]' "count=$(grep -o "</script>" "$DATA/dashboard.html" | wc -l)"
+  t "the page has one status region, beside the part it redraws" \
+    '[ "$(grep -o "<div id=\"status\" role=\"status\"" "$DATA/dashboard.html" | wc -l | tr -d " ")" = 1 ] && grep -q "<div id=\"app\"></div>" "$DATA/dashboard.html"'
   t "hostile text comes back unchanged" 'jq -e --arg h "$HOSTILE" ".items[0].entries[1].text == \$h" "$WORLD/view.json" >/dev/null'
   t "the page refers to nothing on the network" '! sed "s/<script id=\"custodian-data\".*<\/script>//" "$DATA/dashboard.html" | grep -Eqi "https?://|(src|href)=.?//"'
   awk '/^<script>/ { sub(/^<script>/, ""); on = 1 } /^<\/script>$/ { on = 0 } on { print }' "$DATA/dashboard.html" > "$WORLD/emitted.js"
@@ -164,12 +166,16 @@ dashboard_view() {
     '([.tree[] | select(.node == "group:standalone") | .children[].node] == ["repo:standalone/app"]) and ([.tree[] | select(.node == "standalone") | .children[].node] == ["standalone:side"])'
 
   audited_world; regenerate
-  jqt "the headline is the view model's: what leaks, what is misfiled and what needs nothing" "$WORLD/view.json" '.headline == {leaks: 2, misfiled: 1, settled: 3, changed: 0, gone: 0}'
+  jqt "the headline is the view model's: what leaks, what is misfiled and what needs nothing" "$WORLD/view.json" '.headline == {leaks: 2, misfiled: 0, generic: 1, settled: 3, accepted: 0, changed: 0, gone: 0}'
   rm "$FAKE_HOME/store/skills/commit-style/SKILL.md"; printf 'one more rule\n' >> "$FAKE_HOME/store/CLAUDE.md"; regenerate
-  jqt "a leaking file that has gone is not counted as leaking, and one that changed is said to have" "$WORLD/view.json" '.headline == {leaks: 1, misfiled: 1, settled: 3, changed: 1, gone: 1}'
-  jqt "the tree still counts from the report alone" "$WORLD/view.json" '[.tree[] | select(.node == "global") | .fail] == [2]'
+  jqt "a leaking file that has gone is not counted as leaking, and one that changed is said to have" "$WORLD/view.json" '.headline == {leaks: 1, misfiled: 0, generic: 1, settled: 3, accepted: 0, changed: 1, gone: 1}'
+  jqt "the tree and its total leave a gone file out, as the headline does, and still count one that changed" "$WORLD/view.json" '([.tree[] | select(.node == "global") | .fail] == [1]) and .everything.fail == 1'
+  audited_world; regenerate; save "$(one "$(key_of global/skills/commit-style 0)" "")" '[]'; view
+  jqt "the headline counts the accepted files among those still there" "$WORLD/view.json" '.headline.accepted == 1 and .headline.settled == 4'
+  rm "$FAKE_HOME/store/skills/commit-style/SKILL.md"; regenerate
+  jqt "an accepted file that has gone is not counted as accepted" "$WORLD/view.json" '.headline.accepted == 0 and .headline.settled == 3 and .headline.gone == 1'
   t "the page takes its headline from the view model and counts nothing itself" \
-    'grep -q "data.headline" "$plugin/lib/page.js" && ! grep -q "item.needs === \"fail\").length" "$plugin/lib/page.js"'
+    'grep -q "data.headline" "$plugin/lib/page.js" && grep -q "data.everything" "$plugin/lib/page.js" && ! grep -q "item.needs ===" "$plugin/lib/page.js"'
 
   audited_world; regenerate
   jqt "the page is given a save command that needs no launcher" "$WORLD/view.json" '.ack_command == "\"$(cat \"$HOME/.custodian/plugin-root\")/bin/custodian\" ack"'
@@ -1135,6 +1141,27 @@ leaks_that_went() {
   t "and the reminder does not say a file still leaks" '! grep -q "leak" "$STDOUT"' "$(heard)"
 }
 
+misfiled_kinds() {
+  data_world
+  mk "$FAKE_HOME/Developer/acme/api/CLAUDE.md" "api rules
+shared rule
+"
+  EXTRA_ENV=('FAKE_FILTER=.items |= map(
+    if .id == "acme/CLAUDE.md" then .findings = [{line: 1, text: "acme rules", verdict: "warn", suggested_tier: "project", rationale: "About one codebase."}]
+    elif .id == "acme/web/CLAUDE.md" then .findings = [{line: 1, text: "web rules", verdict: "warn", suggested_tier: "global", rationale: "Generic."}]
+    elif .id == "acme/api/CLAUDE.md" then .findings = [{line: 1, text: "api rules", verdict: "warn", suggested_tier: "project", rationale: "About a sibling."}, {line: 2, text: "shared rule", verdict: "warn", suggested_tier: "global", rationale: "Generic."}]
+    else . end)')
+  run_cmd audit; EXTRA_ENV=(); regenerate
+  jqt "a misfiled finding that suggests a broader tier makes its file too generic, any other keeps it too specific, and a file with both is too specific" "$WORLD/view.json" \
+    '([.items[] | select(.id | startswith("acme/")) | {(.id): .band}] | add) == {"acme/CLAUDE.md": "warn", "acme/api/CLAUDE.md": "warn", "acme/web/CLAUDE.md": "generic"}'
+  jqt "the headline counts too specific and too generic files apart" "$WORLD/view.json" '.headline | .misfiled == 2 and .generic == 1 and .leaks == 0'
+  jqt "the tree's misfiled count is the too specific files alone" "$WORLD/view.json" \
+    '([.tree[] | select(.node == "group:acme") | {warn, children: ([.children[] | {(.node): .warn}] | add)}] == [{warn: 2, children: {"repo:acme/api": 1, "repo:acme/web": 0}}]) and .everything.warn == 2'
+  jqt "too specific files come before too generic ones" "$WORLD/view.json" '[.items[].band | select(. == "warn" or . == "generic")] == ["warn", "warn", "generic"]'
+  save "$(one "$(key_of acme/api/CLAUDE.md 0)" "")" '[]'; view
+  jqt "a file whose open findings are all too generic is too generic, though a too specific one in it was accepted" "$WORLD/view.json" '[.items[] | select(.id == "acme/api/CLAUDE.md") | .band] == ["generic"]'
+}
+
 freshness_view() {
   drift_world; run_cmd dashboard --no-open; view
   jqt "a fresh page says when drift was checked and that there is none" "$WORLD/view.json" \
@@ -1486,6 +1513,7 @@ group other_systems
 group packaging
 group audit_command
 group dashboard_view
+group misfiled_kinds
 group keys
 group acknowledge
 group rule_files
