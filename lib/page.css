@@ -43,6 +43,10 @@ button, input, select { font: inherit; color: inherit; }
 
 :focus-visible { outline: 2px solid var(--carbon); outline-offset: 2px; }
 
+.skip { position: absolute; top: -100px; left: 16px; z-index: 2; padding: 8px 12px; background: var(--ink); color: var(--paper); }
+.skip:focus { top: 12px; }
+#results:focus { outline: none; }
+
 .report {
   padding: 40px 40px 28px;
   border-bottom: 1px solid var(--rule);
@@ -97,6 +101,7 @@ button, input, select { font: inherit; color: inherit; }
   color: var(--quiet);
 }
 
+.tree-fold > summary { display: none; }
 .tree ul { list-style: none; margin: 0; padding: 0; }
 .tree ul ul { margin-left: 14px; }
 
@@ -245,6 +250,8 @@ footer { padding: 20px 40px 140px; color: var(--quiet); font-size: 14px; border-
   .report { padding: 28px 20px 20px; }
   .desk { grid-template-columns: minmax(0, 1fr); }
   .tree { position: static; max-height: none; padding: 16px 20px 0; }
+  .tree > h2 { display: none; }
+  .tree-fold > summary { display: list-item; padding: 6px 0; font: 600 16px/1.3 var(--text); cursor: pointer; }
   .ledger { padding: 16px 20px 140px; border-left: 0; }
   .item { grid-template-columns: minmax(0, 1fr) 110px; }
   .item .verdict { grid-column: 1 / 3; }
