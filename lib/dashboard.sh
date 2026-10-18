@@ -76,12 +76,12 @@ def sh: "'"'"'" + gsub("'"'"'"; "'"'"'\\'"'"''"'"'") + "'"'"'";
                   else [$entries[] | select(.acknowledged == null and .verdict == $needs)][0].suggested_tier end),
         order: $i } ] as $items
 | ([$items[].entries[].key]) as $live
+| [$items[] | select(.drift != "gone")] as $present
 | { generated_at: $report[0].generated_at,
     model: $report[0].model,
     claude_code_version: $report[0].claude_code_version,
     summary: ($report[0].summary + {acknowledged: ($items | map(select(.band == "accepted")) | length)}),
-    headline: ([$items[] | select(.drift != "gone")] as $present
-      | tally($present) as $open
+    headline: (tally($present) as $open
       | {leaks: $open.fail, misfiled: $open.warn, settled: (($present | length) - $open.fail - $open.warn),
          changed: ($present | map(select(.needs == "fail" and .drift != null)) | length), gone: (($items | length) - ($present | length))}),
     ack_command: (if $data == $home + "/.custodian" then "\"$(cat \"$HOME/.custodian/plugin-root\")/bin/custodian\" ack"
@@ -106,9 +106,10 @@ def sh: "'"'"'" + gsub("'"'"'"; "'"'"'\\'"'"''"'"'") + "'"'"'";
         + (if any($items[]; .node == "external") then [{node: "external", label: "Outside every root"}] else [] end)
       | map(. as $t
           | [$items[] | select(.top == $t.node)] as $under
-          | $t + tally($under)
+          | $t + tally($under | map(select(.drift != "gone")))
             + {children: [ $under | map(.node) | unique[] | select(. != $t.node) as $child
-                           | {node: $child, label: ($child | sub("^standalone:"; "") | split("/") | last)} + tally([$under[] | select(.node == $child)]) ]}) ),
+                           | {node: $child, label: ($child | sub("^standalone:"; "") | split("/") | last)} + tally([$under[] | select(.node == $child and .drift != "gone")]) ]}) ),
+    everything: tally($present),
     items: ($items | sort_by([(.band | rank), .order]) | map(del(.order))),
     orphaned_acknowledgements: [ $acknowledged | to_entries[] | select(.key | IN($live[]) | not)
                                  | {key, id: .value.id, verdict: .value.verdict, note: (.value.note // ""), acknowledged_at: .value.acknowledged_at} ] }

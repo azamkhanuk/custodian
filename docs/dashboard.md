@@ -15,7 +15,7 @@ Drift annotates and never recounts:
 
 - A file that changed after it was judged says so on its card, since its lines may have moved or gone.
 - A file now loaded from somewhere else says so, since how far it reaches may have changed.
-- A file that no longer exists is listed apart, and is not counted as leaking.
+- A file that no longer exists is listed apart, and is counted neither in the headline nor in the tree.
 - A file found since the audit is listed as not yet judged.
 
 The filters and the search live in the page's address, so a filtered view can be bookmarked. With `editor_url` in the config, a card opens its file in your editor at the flagged line.

@@ -167,7 +167,7 @@ dashboard_view() {
   jqt "the headline is the view model's: what leaks, what is misfiled and what needs nothing" "$WORLD/view.json" '.headline == {leaks: 2, misfiled: 1, settled: 3, changed: 0, gone: 0}'
   rm "$FAKE_HOME/store/skills/commit-style/SKILL.md"; printf 'one more rule\n' >> "$FAKE_HOME/store/CLAUDE.md"; regenerate
   jqt "a leaking file that has gone is not counted as leaking, and one that changed is said to have" "$WORLD/view.json" '.headline == {leaks: 1, misfiled: 1, settled: 3, changed: 1, gone: 1}'
-  jqt "the tree still counts from the report alone" "$WORLD/view.json" '[.tree[] | select(.node == "global") | .fail] == [2]'
+  jqt "the tree and its total leave a gone file out, as the headline does, and still count one that changed" "$WORLD/view.json" '([.tree[] | select(.node == "global") | .fail] == [1]) and .everything.fail == 1'
   t "the page takes its headline from the view model and counts nothing itself" \
     'grep -q "data.headline" "$plugin/lib/page.js" && ! grep -q "item.needs === \"fail\").length" "$plugin/lib/page.js"'
 
