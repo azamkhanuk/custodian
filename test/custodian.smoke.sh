@@ -166,10 +166,14 @@ dashboard_view() {
     '([.tree[] | select(.node == "group:standalone") | .children[].node] == ["repo:standalone/app"]) and ([.tree[] | select(.node == "standalone") | .children[].node] == ["standalone:side"])'
 
   audited_world; regenerate
-  jqt "the headline is the view model's: what leaks, what is misfiled and what needs nothing" "$WORLD/view.json" '.headline == {leaks: 2, misfiled: 0, generic: 1, settled: 3, changed: 0, gone: 0}'
+  jqt "the headline is the view model's: what leaks, what is misfiled and what needs nothing" "$WORLD/view.json" '.headline == {leaks: 2, misfiled: 0, generic: 1, settled: 3, accepted: 0, changed: 0, gone: 0}'
   rm "$FAKE_HOME/store/skills/commit-style/SKILL.md"; printf 'one more rule\n' >> "$FAKE_HOME/store/CLAUDE.md"; regenerate
-  jqt "a leaking file that has gone is not counted as leaking, and one that changed is said to have" "$WORLD/view.json" '.headline == {leaks: 1, misfiled: 0, generic: 1, settled: 3, changed: 1, gone: 1}'
+  jqt "a leaking file that has gone is not counted as leaking, and one that changed is said to have" "$WORLD/view.json" '.headline == {leaks: 1, misfiled: 0, generic: 1, settled: 3, accepted: 0, changed: 1, gone: 1}'
   jqt "the tree and its total leave a gone file out, as the headline does, and still count one that changed" "$WORLD/view.json" '([.tree[] | select(.node == "global") | .fail] == [1]) and .everything.fail == 1'
+  audited_world; regenerate; save "$(one "$(key_of global/skills/commit-style 0)" "")" '[]'; view
+  jqt "the headline counts the accepted files among those still there" "$WORLD/view.json" '.headline.accepted == 1 and .headline.settled == 4'
+  rm "$FAKE_HOME/store/skills/commit-style/SKILL.md"; regenerate
+  jqt "an accepted file that has gone is not counted as accepted" "$WORLD/view.json" '.headline.accepted == 0 and .headline.settled == 3 and .headline.gone == 1'
   t "the page takes its headline from the view model and counts nothing itself" \
     'grep -q "data.headline" "$plugin/lib/page.js" && grep -q "data.everything" "$plugin/lib/page.js" && ! grep -q "item.needs ===" "$plugin/lib/page.js"'
 

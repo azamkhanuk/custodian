@@ -84,6 +84,7 @@ def sh: "'"'"'" + gsub("'"'"'"; "'"'"'\\'"'"''"'"'") + "'"'"'";
     summary: ($report[0].summary + {acknowledged: ($items | map(select(.band == "accepted")) | length)}),
     headline: (tally($present) as $open | ($present | map(select(.band == "generic")) | length) as $generic
       | {leaks: $open.fail, misfiled: $open.warn, generic: $generic, settled: (($present | length) - $open.fail - $open.warn - $generic),
+         accepted: ($present | map(select(.band == "accepted")) | length),
          changed: ($present | map(select(.needs == "fail" and .drift != null)) | length), gone: (($items | length) - ($present | length))}),
     ack_command: (if $data == $home + "/.custodian" then "\"$(cat \"$HOME/.custodian/plugin-root\")/bin/custodian\" ack"
                   else "CUSTODIAN_HOME=\($data | sh) \"$(cat \($data + "/plugin-root" | sh))/bin/custodian\" ack" end),
