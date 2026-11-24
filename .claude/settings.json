@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "azamkhanuk": {
+      "source": {
+        "source": "github",
+        "repo": "azamkhanuk/claude-plugins"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "context-central@azamkhanuk": true
+  }
+}
